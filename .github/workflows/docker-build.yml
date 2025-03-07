@@ -6,10 +6,10 @@ on:
   workflow_dispatch:
 
 env:
-  DOCKERHUB_USERNAME: "zjf2610"        # 目标Docker Hub用户名（固定）
-  IMAGE_NAME: "opensips-custom"        # 镜像名称
-  OPENSIPS_MAJOR: "3.5"                # OpenSIPS主版本
-  OPENSIPS_MODULES: "db_mysql,mi_http,httpd,maxfwd,sl,rr,tm"  # 模块列表
+  DOCKERHUB_USERNAME: "zjf2610"
+  IMAGE_NAME: "opensips-custom"
+  OPENSIPS_MAJOR: "3.5"
+  OPENSIPS_MODULES: "db_mysql,mi_http,httpd,maxfwd,sl,rr,tm"
 
 jobs:
   build-and-push:
@@ -21,19 +21,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
-          driver-opts: network=host     # 使用宿主机网络加速下载（参考网页5）
+          driver-opts: network=host
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ env.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}  # 需配置密钥
-
-      - name: Configure APT cache
-        uses: actions/cache@v3
-        with:
-          path: /var/lib/apt/lists
-          key: apt-${{ hashFiles('**/Dockerfile') }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and Push
         uses: docker/build-push-action@v5
@@ -47,10 +41,5 @@ jobs:
           build-args: |
             OPENSIPS_MAJOR=${{ env.OPENSIPS_MAJOR }}
             OPENSIPS_MODULES=${{ env.OPENSIPS_MODULES }}
-          cache-from: type=gha          # 启用GitHub缓存（参考网页5）
+          cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Skip Duplicate Actions (可选优化)
-        uses: fkirc/skip-duplicate-actions@v6
-        with:
-          concurrent_skipping: 'same-content'
