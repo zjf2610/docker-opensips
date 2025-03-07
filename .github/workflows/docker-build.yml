@@ -1,4 +1,4 @@
-name: Docker Build and Push to zjf2610
+name: Build and Push OpenSIPS Image
 
 on:
   push:
@@ -6,9 +6,10 @@ on:
   workflow_dispatch:
 
 env:
-  DOCKERHUB_USERNAME: "zjf2610"        # 指定目标Docker Hub用户名
-  IMAGE_NAME: "opensips-custom"        # 镜像名称（自定义）
-  OPENSIPS_VERSION: "3.5.4"            # OpenSIPS版本
+  DOCKERHUB_USERNAME: "zjf2610"        # 目标Docker Hub用户名（固定）
+  IMAGE_NAME: "opensips-custom"        # 镜像名称
+  OPENSIPS_MAJOR: "3.5"                # OpenSIPS主版本
+  OPENSIPS_MODULES: "db_mysql,mi_http,httpd,maxfwd,sl,rr,tm"  # 模块列表
 
 jobs:
   build-and-push:
@@ -19,22 +20,37 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host     # 使用宿主机网络加速下载（参考网页5）
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ env.DOCKERHUB_USERNAME }}  # 直接使用环境变量
-          password: ${{ secrets.DOCKERHUB_TOKEN }}  # 需配置Token密钥
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}  # 需配置密钥
+
+      - name: Configure APT cache
+        uses: actions/cache@v3
+        with:
+          path: /var/lib/apt/lists
+          key: apt-${{ hashFiles('**/Dockerfile') }}
 
       - name: Build and Push
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: ./Dockerfile
           push: true
           tags: |
-            ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.OPENSIPS_VERSION }}
+            ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.OPENSIPS_MAJOR }}
             ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
           build-args: |
-            OPENSIPS_VERSION=${{ env.OPENSIPS_VERSION }}
-          cache-from: type=gha
+            OPENSIPS_MAJOR=${{ env.OPENSIPS_MAJOR }}
+            OPENSIPS_MODULES=${{ env.OPENSIPS_MODULES }}
+          cache-from: type=gha          # 启用GitHub缓存（参考网页5）
           cache-to: type=gha,mode=max
+
+      - name: Skip Duplicate Actions (可选优化)
+        uses: fkirc/skip-duplicate-actions@v6
+        with:
+          concurrent_skipping: 'same-content'
