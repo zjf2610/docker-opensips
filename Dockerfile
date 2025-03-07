@@ -30,8 +30,5 @@ RUN make clean && make menuconfig \
 # 清理构建文件
 RUN rm -rf /opensips
 
-# 将本地配置文件复制到容器中
-COPY opensips.cfg /etc/opensips/opensips.cfg
-
 # 设置容器启动时执行的命令
-CMD ["opensips", "-f", "/etc/opensips/opensips.cfg", "-M", "1"]
+CMD ["opensips", "-M", "1"]
