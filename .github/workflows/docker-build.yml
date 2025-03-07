@@ -9,7 +9,6 @@ env:
   DOCKERHUB_USERNAME: "zjf2610"
   IMAGE_NAME: "opensips-custom"
   OPENSIPS_MAJOR: "3.5"
-  OPENSIPS_MODULES: "db_mysql,mi_http,httpd,maxfwd,sl,rr,tm"
 
 jobs:
   build-and-push:
@@ -21,7 +20,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
-          driver-opts: network=host
+          driver-opts: network=host  # 强制使用宿主机网络模式
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -38,10 +37,5 @@ jobs:
           tags: |
             ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.OPENSIPS_MAJOR }}
             ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
-          build-args: |
-            OPENSIPS_MAJOR=${{ env.OPENSIPS_MAJOR }}
-            OPENSIPS_MODULES=${{ env.OPENSIPS_MODULES }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-          
